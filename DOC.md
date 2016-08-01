@@ -96,4 +96,16 @@ passwd username
 echo "username ALL=(ALL) ALL" >> /etc/sudoers
  ```
 
-4.
+4. Log into the non-root user account. Replace **username** with the chosen username. Enter the previously set password when prompted. After logging in, change into the non-root user's home directory.
+ ```
+su username -
+cd
+ ```
+
+<div class="page-break"></div>
+
+# Install BIND
+
+**All remaining steps should be done with the non-root user account. See [Prerequisites section](#prerequisites) for logging into the non-root account.***
+
+## Download and Verify
