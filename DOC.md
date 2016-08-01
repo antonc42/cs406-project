@@ -4,7 +4,7 @@ This guide assumes the use of BIND v9.10.4-P2 (the most current version at the t
 
 # Install CentOS 7
 
-1. Start the machine with a CentOS install DVD inserted. Select the CDROM drive as the boot device if necessary.
+1. Start the machine with a CentOS install DVD inserted. Select the CD drive as the boot device if necessary.
 
 2. When the CentOS install DVD boots, select "Install CentOS 7" from the menu using the arrow keys and hit the Enter key.  
 ![boot menu selection](https://github.com/antonc42/cs406-project/blob/master/centos-install-001.png)
@@ -47,4 +47,8 @@ This guide assumes the use of BIND v9.10.4-P2 (the most current version at the t
 
 15. After the install has finished, click the Reboot button.
 ![install finished](https://github.com/antonc42/cs406-project/blob/master/centos-install-014.png)
+
+16. Make sure to remove the install disk from the CD drive
+
+# Prerequisites
 
