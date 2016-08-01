@@ -52,3 +52,20 @@ This guide assumes the use of BIND v9.10.4-P2 (the most current version at the t
 
 # Prerequisites
 
+**Note that some of these dependencies are for the BIND application and others are useful utilities to aid in setup and not strictly dependencies.**
+
+1. Once the system has restarted to the login prompt, login with the username `root` and the password that was set during the install.
+
+2. Install dependencies.
+ ```
+yum install screen vim bind-utils wget gcc automake net-tools checkpolicy policycoreutils-python perl-Net-DNS-Nameserver perl-IO-Socket-INET6
+ ```
+
+3. Add a non-root user, set the password, and allow the user to run commands via `sudo`. Replace **username** with the desired username.
+ ```
+useradd username
+passwd username
+echo "username ALL=(ALL) ALL" >> /etc/sudoers
+ ```
+
+4. 
