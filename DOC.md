@@ -113,4 +113,4 @@ cd
 1. Go to the Internet Systems Consortium website in the dowloads section: [https://www.isc.org/downloads/](https://www.isc.org/downloads/). Click on the 'BIND' option under 'Downloads' to expand the availiable downloads. Click on the Download button for the 'Current-Stable' release.  
 ![isc downloads](images/isc-site-001.png)
 
-2. In the popup box, 
+2. In the popup box,
