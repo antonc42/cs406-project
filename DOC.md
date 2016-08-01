@@ -106,6 +106,6 @@ cd
 
 # Install BIND
 
-**All remaining steps should be done with the non-root user account. See [Prerequisites section](#prerequisites) for logging into the non-root account.***
+**All remaining steps should be done with the non-root user account. See [Prerequisites section](#prerequisites) for logging into the non-root account.**
 
 ## Download and Verify
