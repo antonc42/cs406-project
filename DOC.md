@@ -89,14 +89,26 @@ This guide assumes the use of BIND v9.10.4-P2 (the most current version at the t
 yum install screen vim bind-utils wget gcc automake net-tools checkpolicy policycoreutils-python perl-Net-DNS-Nameserver perl-IO-Socket-INET6
  ```
 
-3. Add a non-root user, set the password, and allow the user to run commands via `sudo`. Replace **username** with the desired username.
+3. Update the system
+ ```
+yum update
+ ```
+
+4. After the system is updated, reboot the system.
+ ```
+reboot
+ ```
+
+5. When the system has finished restarting, log back in as the `root` user.
+
+6. Add a non-root user, set the password, and allow the user to run commands via `sudo`. Replace **username** with the desired username.
  ```
 useradd username
 passwd username
 echo "username ALL=(ALL) ALL" >> /etc/sudoers
  ```
 
-4. Log into the non-root user account. Replace **username** with the chosen username. Enter the previously set password when prompted. After logging in, change into the non-root user's home directory.
+7. Log into the non-root user account. Replace **username** with the chosen username. Enter the previously set password when prompted. After logging in, change into the non-root user's home directory.
  ```
 su username -
 cd
@@ -113,4 +125,46 @@ cd
 1. Go to the Internet Systems Consortium website in the dowloads section: [https://www.isc.org/downloads/](https://www.isc.org/downloads/). Click on the 'BIND' option under 'Downloads' to expand the availiable downloads. Click on the Download button for the 'Current-Stable' release.  
 ![isc downloads](images/isc-site-001.png)
 
-2. In the popup box,
+<div class="page-break"></div>
+
+2. In the popup box, right click on the `tar.gz` download box and click 'Save Link As' to copy the file URL to the clipboard.  
+![isc popup](images/isc-site-002.png)
+
+3. On the command line of the CentOS 7 server, use `wget` to download the file. Paste the file URL previously copied where **file-url** is in the command below.
+ ```
+wget file-url -O bind.tar.gz
+ ```
+
+4. In the same popup box where the `tar.gz` file URL was copied on the ISC website, also copy the URL of the 'SHA512' file listed under the `tar.gz` box.
+
+5. On the command line of the CentOS 7 server, use `wget` to download the 'SHA512' file. Paste the file URL previously copied where **file-url** is in the command below.
+ ```
+wget file-url -O bind.sha512.asc
+ ```
+
+6. Import the ISC GPG key to verify the downloaded file.
+ ```
+gpg --keyserver pgp.mit.edu --search-keys codesign@isc.org
+ ```
+ Select the current signing key (the one that is not expired) by typing the number and hitting Enter.
+ ```
+ gpg: directory `/home/username/.gnupg' created
+ gpg: new configuration file `/home/username/.gnupg/gpg.conf' created
+ gpg: WARNING: options in `/home/username/.gnupg/gpg.conf' are not yet active during this run
+ gpg: keyring `/home/username/.gnupg/secring.gpg' created
+ gpg: keyring `/home/username/.gnupg/pubring.gpg' created
+ gpg: searching for "codesign@isc.org" from hkp server pgp.mit.edu
+ (1)     Internet Systems Consortium, Inc. (Signing key, 2015-2016) <codesign@i
+           2048 bit RSA key 911A4C02, created: 2014-12-02, expires: 2017-01-31
+ (2)     Internet Systems Consortium, Inc. (Signing key, 2013) <codesign@isc.or
+           2048 bit RSA key 189CDBC5, created: 2013-01-31, expires: 2015-01-31 (expired)
+ (3)     Internet Systems Consortium, Inc. (Signing key, 2012) (http://www.isc.
+           2048 bit RSA key C96B350A, created: 2011-10-27, expires: 2013-02-01 (expired)
+ Keys 1-3 of 3 for "codesign@isc.org".  Enter number(s), N)ext, or Q)uit > 1
+ gpg: requesting key 911A4C02 from hkp server pgp.mit.edu
+ gpg: /home/username/.gnupg/trustdb.gpg: trustdb created
+ gpg: key 911A4C02: public key "Internet Systems Consortium, Inc. (Signing key, 2015-2016) <codesign@isc.org>" imported
+ gpg: no ultimately trusted keys found
+ gpg: Total number processed: 1
+ gpg:               imported: 1  (RSA: 1)
+ ```
