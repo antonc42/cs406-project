@@ -144,7 +144,7 @@ wget file-url -O bind.sha512.asc
 
 6. Import the ISC GPG key to verify the downloaded file.
  ```
-gpg --keyserver pgp.mit.edu --search-keys codesign@isc.org
+gpg --keyserver pgp.mit.edu --search-keys codesign@isc.org
  ```
  Select the current signing key (the one that is not expired) by typing the number and hitting Enter.
  ```
