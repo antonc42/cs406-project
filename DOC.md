@@ -86,7 +86,7 @@ This guide assumes the use of BIND v9.10.4-P2 (the most current version at the t
 
 2. Install dependencies.
  ```
-yum install screen vim bind-utils wget gcc automake net-tools checkpolicy policycoreutils-python perl-Net-DNS-Nameserver perl-IO-Socket-INET6
+yum install screen vim bind-utils wget openssl-devel gcc automake net-tools checkpolicy policycoreutils-python perl-Net-DNS-Nameserver perl-IO-Socket-INET6
  ```
 
 3. Update the system
@@ -168,3 +168,51 @@ gpg --keyserver pgp.mit.edu --search-keys codesign@isc.org
  gpg: Total number processed: 1
  gpg:               imported: 1  (RSA: 1)
  ```
+
+7. Verify the downloaded BIND software with the downloaded `SHA512` hash.
+  ```
+gpg --verify bind.sha512.asc bind.tar.gz
+ ```
+ If the output shows `Good signature`, then the download is verified. Ignore the warning message about the key not being certified with a trusted signature.
+ ```
+ gpg: Signature made Mon 18 Jul 2016 05:59:45 PM CDT using RSA key ID 911A4C02
+ gpg: checking the trustdb
+ gpg: no ultimately trusted keys found
+ gpg: Good signature from "Internet Systems Consortium, Inc. (Signing key, 2015-2016) <codesign@isc.org>"
+ gpg: WARNING: This key is not certified with a trusted signature!
+ gpg:          There is no indication that the signature belongs to the owner.
+ Primary key fingerprint: ADBE 9446 286C 7949 05F1  E075 6FA6 EBC9 911A 4C02
+ ```
+
+<div class="page-break"></div>
+
+## Compile
+
+1. Make a new empty directory to extract the BIND source code.
+ ```
+mkdir bind
+ ```
+
+2. Untar the downloaded BIND source code.
+ ```
+tar -xvf bind.tar.gz -C bind --strip 1
+ ```
+
+3. Change into the new directory.
+ ```
+cd bind
+ ```
+
+4. Run the script to configure the compilation options.
+ ```
+./configure --prefix=/usr --sysconfdir=/etc --enable-threads --enable-static --localstatedir=/var
+ ```
+
+5. Compile BIND.
+ ```
+make
+ ```
+
+<div class="page-break"></div>
+
+## Test
