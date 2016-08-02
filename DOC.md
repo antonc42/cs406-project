@@ -216,3 +216,17 @@ make
 <div class="page-break"></div>
 
 ## Test
+
+1. Enable the test environment.
+ ```
+sudo bin/tests/system/ifconfig.sh up
+ ```
+
+2. Check the built software, saving the output to a log file.
+ ```
+make check | tee check.log
+ ```
+ **Note:** This checking process will take a very long time, usually more than 15 minutes.  
+ **Note:** It is helpful to save the output to a log file because it is extremely long and it may be necessary to search through it to find any problems with the checks.
+
+3. **None of the tests should have the result `FAIL`.** Any results that have `SKIPPED` or `UNTESTED` are fine.
