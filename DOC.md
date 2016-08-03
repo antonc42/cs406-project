@@ -106,14 +106,43 @@ reboot
 useradd -r -M -d /var/named/chroot -s /sbin/nologin named
  ```
 
-7. Add a non-root user, set the password, and allow the user to run commands via `sudo`. Replace **username** with the desired username.
+7. Allow DNS queries through the host firewall.
+ ```
+firewall-cmd --permanent --add-service=dns
+firewall-cmd --reload
+ ```
+8. Create the file for an SELinux policy. Press the 'i' key to enter insert mode.
+ ```
+vim -c 'set paste' /tmp/named-custom.te
+ ```
+
+9. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+ ```
+module named-custom 1.0;
+require {
+      type sysctl_net_t;
+      type named_t;
+      class dir search;
+      class file { read getattr open };
+}
+#============= named_t ==============
+allow named_t sysctl_net_t:dir search;
+allow named_t sysctl_net_t:file { read getattr open };
+ ```
+
+10. Build and load the policy into SELinux.
+ ```
+checkmodule -M -m -o /tmp/named-custom.mod /tmp/named-custom.te && semodule_package -o /tmp/named-custom.pp -m /tmp/named-custom.mod && semodule -i /tmp/named-custom.pp
+ ```
+
+11. Add a non-root user, set the password, and allow the user to run commands via `sudo`. Replace **username** with the desired username.
  ```
 useradd username
 passwd username
 echo "username ALL=(ALL) ALL" >> /etc/sudoers
  ```
 
-8. Log into the non-root user account. Replace **username** with the chosen username. Enter the previously set password when prompted. After logging in, change into the non-root user's home directory.
+12. Log into the non-root user account. Replace **username** with the chosen username. Enter the previously set password when prompted. After logging in, change into the non-root user's home directory.
  ```
 su username -
 cd
@@ -127,7 +156,7 @@ cd
 
 ## Download and Verify
 
-1. Go to the Internet Systems Consortium website in the dowloads section: [https://www.isc.org/downloads/](https://www.isc.org/downloads/). Click on the 'BIND' option under 'Downloads' to expand the availiable downloads. Click on the Download button for the 'Current-Stable' release.  
+1. Go to the Internet Systems Consortium website in the downloads section: [https://www.isc.org/downloads/](https://www.isc.org/downloads/). Click on the 'BIND' option under 'Downloads' to expand the available downloads. Click on the Download button for the 'Current-Stable' release.  
 ![isc downloads](images/isc-site-001.png)
 
 <div class="page-break"></div>
@@ -252,6 +281,8 @@ make clean
 sudo bin/tests/system/ifconfig.sh down
  ```
 
+<div class="page-break"></div>
+
 ## Install
 
 1. Install BIND.
@@ -270,7 +301,7 @@ sudo vim -c "set paste" /usr/libexec/setup-named-chroot.sh
  ```
 
 4. Copy the following code and paste it into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
- ```bash
+ ```
  #!/bin/bash
  usage() {
    echo
@@ -317,7 +348,7 @@ sudo vim -c "set paste" /usr/libexec/setup-named-chroot.sh
      usage
      exit 1
  esac
-  ```
+ ```
 
 5. Create the pseudo-devices for the chroot environment.
  ```
@@ -330,7 +361,7 @@ sudo mknod /var/named/chroot/dev/random c 1 8
 sudo chmod 740 /usr/libexec/setup-named-chroot.sh
 sudo chown -R root.named /var/named/chroot/etc /var/named/chroot/var/run/named /var/named/chroot/var/run
 sudo chown -R named.named /var/named/chroot/var/named
-sudo restorecon -R /var/namech/chroot/*
+sudo restorecon -R /var/named/chroot/*
 sudo setsebool -P named_write_master_zones on
  ```
 
@@ -383,7 +414,11 @@ WantedBy=multi-user.target
 sudo systemctl daemon-reload
  ```
 
+<div class="page-break"></div>
+
 # Configure BIND
+
+This will enable a basic config of the BIND DNS server. No zones or custom settings will be configured beyond the basic necessary ones. For additional configuration and best security practices, see later sections.
 
 1. Create the new config file. Press the 'i' key to enter insert mode.
  ```
@@ -425,29 +460,7 @@ sudo su -c 'rndc-confgen -r /dev/urandom -b 512 > /var/named/chroot/etc/rndc.con
 sed '/conf/d;/^#/!d;s:^# ::' /var/named/chroot/etc/rndc.conf | sudo tee -a /var/named/chroot/etc/named.conf >/dev/null
  ```
 
-5. Create the file for an SELinux policy. Press the 'i' key to enter insert mode.
- ```
-vim -c 'set paste' /tmp/named-custom.te
- ```
 
-6. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
- ```
-module named-custom 1.0;
-require {
-       type sysctl_net_t;
-       type named_t;
-       class dir search;
-       class file { read getattr open };
-}
-#============= named_t ==============
-allow named_t sysctl_net_t:dir search;
-allow named_t sysctl_net_t:file { read getattr open };
- ```
-
-7. Build and load the policy into SELinux.
- ```
-checkmodule -M -m -o /tmp/named-custom.mod /tmp/named-custom.te && semodule_package -o /tmp/named-custom.pp -m /tmp/named-custom.mod && sudo semodule -i /tmp/named-custom.pp
- ```
 
 8. Start the BIND service.
  ```
