@@ -264,12 +264,12 @@ sudo make install
 sudo mkdir -p /var/named/chroot/dev /var/named/chroot/etc /var/named/chroot/proc /var/named/chroot/usr /var/named/chroot/var/named/data /var/named/chroot/var/run/named /var/named/chroot/run/named /var/named/chroot/var/named/slaves
  ```
 
-3. Create a new file for the chroot setup script.
+3. Create a new file for the chroot setup script. Press the 'i' key to enter insert mode.
  ```
 sudo vim -c "set paste" /usr/libexec/setup-named-chroot.sh
  ```
 
-4. Copy the following code and paste it into the file.
+4. Copy the following code and paste it into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
  ```bash
  #!/bin/bash
  usage() {
@@ -330,14 +330,16 @@ sudo mknod /var/named/chroot/dev/random c 1 8
 sudo chmod 740 /usr/libexec/setup-named-chroot.sh
 sudo chown -R root.named /var/named/chroot/etc /var/named/chroot/var/run/named /var/named/chroot/var/run
 sudo chown -R named.named /var/named/chroot/var/named
+sudo restorecon -R /var/namech/chroot/*
+sudo setsebool -P named_write_master_zones on
  ```
 
-7. Create a file for the systemd startup of the chroot environment.
+7. Create a file for the systemd startup of the chroot environment. Press the 'i' key to enter insert mode.
  ```
 sudo vim -c "set paste" /usr/lib/systemd/system/named-chroot-setup.service
  ```
 
-8. Copy and paste the following into the file.
+8. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
  ```
 [Unit]
 Description=Set-up/destroy chroot environment for named (DNS)
@@ -349,12 +351,12 @@ ExecStart=/usr/libexec/setup-named-chroot.sh /var/named/chroot on
 ExecStop=/usr/libexec/setup-named-chroot.sh /var/named/chroot off
  ```
 
-9. Create a file for the systemd startup of BIND.
+9. Create a file for the systemd startup of BIND. Press the 'i' key to enter insert mode.
  ```
 sudo vim -c "set paste" /usr/lib/systemd/system/named.service
  ```
 
-10. Copy and paste the following into the file.
+10. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
  ```
 [Unit]
 Description=Berkeley Internet Name Domain (DNS)
@@ -383,4 +385,76 @@ sudo systemctl daemon-reload
 
 # Configure BIND
 
-1. 
+1. Create the new config file. Press the 'i' key to enter insert mode.
+ ```
+sudo vim -c 'set paste' /var/named/chroot/etc/named.conf
+ ```
+
+2. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+ ```
+options {
+       directory "/var/named";
+       pid-file "/var/run/named/named.pid";
+       statistics-file "/var/run/named/named.stats";
+};
+zone "." {
+       type hint;
+       file "root.hints";
+};
+zone "0.0.127.in-addr.arpa" {
+       type master;
+       file "0.0.127.in-addr.arpa";
+};
+logging {
+       category default { default_syslog; default_debug; };
+       category unmatched { null; };
+       channel default_syslog { syslog daemon; severity info; };
+       channel default_debug { file "named.run"; severity dynamic; };
+       channel default_stderr { stderr; severity info; };
+       channel null { null; };
+};
+ ```
+
+3. Create the `rndc` configuration.
+ ```
+sudo su -c 'rndc-confgen -r /dev/urandom -b 512 > /var/named/chroot/etc/rndc.conf'
+ ```
+
+4. Add the necessary configuration to the `named.conf` for `rndc`.
+ ```
+sed '/conf/d;/^#/!d;s:^# ::' /var/named/chroot/etc/rndc.conf | sudo tee -a /var/named/chroot/etc/named.conf >/dev/null
+ ```
+
+5. Create the file for an SELinux policy. Press the 'i' key to enter insert mode.
+ ```
+vim -c 'set paste' /tmp/named-custom.te
+ ```
+
+6. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+ ```
+module named-custom 1.0;
+require {
+       type sysctl_net_t;
+       type named_t;
+       class dir search;
+       class file { read getattr open };
+}
+#============= named_t ==============
+allow named_t sysctl_net_t:dir search;
+allow named_t sysctl_net_t:file { read getattr open };
+ ```
+
+7. Build and load the policy into SELinux.
+ ```
+checkmodule -M -m -o /tmp/named-custom.mod /tmp/named-custom.te && semodule_package -o /tmp/named-custom.pp -m /tmp/named-custom.mod && sudo semodule -i /tmp/named-custom.pp
+ ```
+
+8. Start the BIND service.
+ ```
+sudo systemctl start named
+ ```
+
+9. Enable BIND to run on startup.
+ ```
+sudo systemctl enable named
+ ```
