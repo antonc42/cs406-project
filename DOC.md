@@ -418,7 +418,9 @@ sudo systemctl daemon-reload
 
 # Configure BIND
 
-This will enable a basic config of the BIND DNS server. No zones or custom settings will be configured beyond the basic necessary ones. For additional configuration and best security practices, see later sections.
+## Basic Configuration
+
+This is the minimum configuration needed for the BIND server to start and run as a basic caching DNS server. Additional configuration and security settings can be found in later sections.
 
 1. Create the new config file. Press the 'i' key to enter insert mode.
  ```
@@ -460,7 +462,29 @@ sudo su -c 'rndc-confgen -r /dev/urandom -b 512 > /var/named/chroot/etc/rndc.con
 sed '/conf/d;/^#/!d;s:^# ::' /var/named/chroot/etc/rndc.conf | sudo tee -a /var/named/chroot/etc/named.conf >/dev/null
  ```
 
+5. Create the localhost reverse zone file.  Press the 'i' key to enter insert mode.
+ ```
+sudo vim -c 'set paste' /var/named/chroot/var/named/0.0.127.in-addr.arpa
+ ```
 
+6. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+ ```
+$TTL 3D
+@       IN SOA  ns.local.domain. hostmaster.local.domain. (
+        2016010100      ; Serial
+        8H              ; Refresh
+        2H              ; Retry
+        4W              ; Expire
+        1D              ; Minimum TTL
+        )
+        NS      ns.local.domain.
+1       PTR     localhost.
+ ```
+
+7. Create the root hints file.
+ ```
+sudo su -c 'dig +nocmd +noall +answer +additional @a.root-servers.net . NS > /var/named/chroot/var/named/root.hints'
+ ```
 
 8. Start the BIND service.
  ```
@@ -471,3 +495,5 @@ sudo systemctl start named
  ```
 sudo systemctl enable named
  ```
+
+## Zone Configuration
