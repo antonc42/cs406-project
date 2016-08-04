@@ -2,6 +2,15 @@
 
 This guide assumes the use of BIND v9.10.4-P2 (the most current version at the time of writing) and CentOS 7 minimal install. Any other versions of software or distributions may have different dependencies, options, or commands.
 
+# Caveats
+
+- If a forward zone is to be configured on the BIND DNS server, not just any zone can be used, except for the purposes of experimentation or local use.
+ - If a zone such as `google.com` were configured on the server, it would not be usable by anyone in the world except those users of the particular DNS server.
+ - Although it is possible to "over-ride" a zone in this way, it is not recommended.
+ - Instead, a real domain name may be purchases from a domain registrar and set to use the BIND DNS server as its authoratative DNS server.
+ - Then and only then will the zone be valid world-wide.
+- This guide assumes some basic familiarity with the Linux command line and the RedHat/CentOS/Fedora family of distributions.
+
 # Install CentOS 7
 
 1. Start the machine with a CentOS install DVD inserted. Select the CD drive as the boot device if necessary.
@@ -496,4 +505,155 @@ sudo systemctl start named
 sudo systemctl enable named
  ```
 
-## Zone Configuration
+<div class="page-break"></div>
+
+## Forward Zone Configuration
+
+If desired, a forward zone can be configured on the DNS server. We will be using the `example.com` zone. A forward zone is one that translates names such as `example.com` into IP addresses such as `192.168.1.2`.
+
+1. Create the zone file.  Press the 'i' key to enter insert mode.
+ ```
+sudo vim -c 'set paste' /var/named/chroot/var/named/example.com
+ ```
+
+2. Copy and paste the following into the file.  Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+ ```
+$TTL 3D
+@      IN SOA  ns.example.com. hostmaster.example.com. (
+       2016010100      ; serial
+       8H              ; refresh, seconds
+       2H              ; retry, seconds
+       4W              ; expire, seconds
+       1D )            ; minimum, seconds
+       A       192.168.1.2
+       NS      ns
+ns     A       192.168.1.1
+www    CNAME   @
+ ```
+ The basic components of the file are as follows. The values may be changed to fit the zone
+ - `$TTL 3D` - The default time to live for the records in this zone. This is the amount of time that a caching name server will keep the record before letting it expire.
+ - `@ IN SOA ns.example.com. hostmaster.example.com.` - The start of authority record for this zone. The `@` is automatically substituted with the zone name `example.com`. `ns.example.com` is the primary name server for this zone. It must have an `A` record, as seen later in the file. `hostmaster.example.com` is the administrator of the zone. Note the dot at the ends of both names. They are very important.
+ - `2016010100` - The serial number, usually in the format `YYYYMMDDNN`, where the last two digits `NN` are a revision number for the date. This is used by slave servers to determine when there has been a change to the zone and they need to get an updated copy from the master server.
+ - `8H` - The length of time before a slave server should be try to refresh the zone from the master.
+ - `2H` - The time between retries if the slave fails to contact the master for the zone.
+ - `4W` - The time until the zone is no longer authoratative. This value only applies to slave servers.
+ - `1D` - The amount of time a caching name server should wait before retrying when an `NXDOMAIN` result is returned for the zone.
+ - `A 192.168.1.2` - The `A` record for the zone. This means that `example.com` will resolve to `192.168.1.2`.
+ - `NS ns` - The `NS` record for the zone that identifies the primary name server. It points to the name `ns`, which in turn has an `A` record that points to the IP address `192.168.1.1`.
+ - `www CNAME @` - A `CNAME` or alias record for the zone. This is effectively the same as `www CNAME example.com.` because the `@` is substituted with the zone name. The alias record means that `www.example.com` will alias to `example.com` which will resolve to `192.168.1.2`.
+
+3. Edit the `named.conf` file.   Press the 'i' key to enter insert mode.
+ ```
+sudo vim -c 'set paste' /var/named/chroot/etc/named.conf
+ ```
+
+4. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+ ```
+zone "example.com" {
+        type master;
+        notify no;
+        file "example.com";
+};
+ ```
+ The basic components of the entry are as follows.
+ - `zone "example.com"` - The zone definition. This gives the name to the zone.
+ - `type master` - The zone is a master zone, meaning this server is authoratative for the zone.
+ - `notify no;` - Do not send notifies to any other DNS servers. Sending notifies is unnecessary unless there are slave servers for the zone.
+ - `file "example.com` - Defines the file that contains the zone records. This is a relative path based on the `directory` option earlier in the file.
+
+5. Restart the BIND service.
+ ```
+sudo systemctl restart named
+ ```
+
+6. Test the new zone with some lookups. The results should show the server answering correctly for the zone.
+  ```
+dig @localhost +noall +answer example.com
+ example.com.            259200  IN      A       192.168.1.2
+dig @localhost +noall +answer www.example.com
+ www.example.com.        259200  IN      CNAME   example.com.
+ example.com.            259200  IN      A       192.168.1.2
+dig @localhost +noall +answer +additional example.com NS
+  example.com.            259200  IN      NS      ns.example.com.
+  ns.example.com.         259200  IN      A       192.168.1.1
+  ```
+
+7. If any changes are made to the zone file, the serial number must be incremented by at least one. However, it is recommended to keep with the `YYYYMMDDNN` format that follows the date. After the changes to the file are saved, the `rndc` command can be used to reload the zones without restarting the BIND service.
+ ```
+rndc reload
+ ```
+
+<div class="page-break"></div>
+
+## Reverse Zone Configuration
+
+If desired, a reverse zone can be configured. The reverse zone resolves IP addresses such as `192.168.1.2` to names such as `example.com`. The reverse zone, unlike the forward zone, is tied to a classful subnet. This means that the IP address `192.168.1.2` would be in a different zone than `192.168.2.2`. The reverse zones are always named with the reversed octets of the network portion of the IP address followed by `.in-addr.arpa`. For this example, the zone will be `1.168.192.in-addr.arpa`.
+
+1. Create the zone file.  Press the 'i' key to enter insert mode.
+ ```
+sudo vim -c 'set paste' /var/named/chroot/var/named/1.168.192.in-addr.arpa
+ ```
+
+2. Copy and paste the following into the file.   Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+ ```
+$TTL 3D
+@      IN SOA  ns.example.com. hostmaster.example.com. (
+       2016010103      ; serial
+       8H              ; refresh, seconds
+       2H              ; retry, seconds
+       4W              ; expire, seconds
+       1D )            ; minimum, seconds
+       NS      ns.example.com.
+1       PTR     ns.example.com.
+2       PTR     example.com.
+2       PTR     www.example.com.
+ ```
+ The `TTL`, `SOA`, and `NS` records are the same as in the forward zone. However, the other records are different.  
+ The type of record for the reverse zone is `PTR`. Instead of the name on the left and the IP on the right as in an `A` record, they are reversed. On the left side, the reversed octects of the host portion of the IP address are listed. On the right side, the fully qualified domain name (FQDN) including the `.` at the end are listed. It is important to have the `.` at the end of the name to absolutely globally identify the name.
+
+3. Restart the BIND service.
+ ```
+sudo systemctl restart named
+ ```
+
+4. Test the new zone with some lookups. The results should show the server answering correctly for the zone.
+ ```
+dig @localhost +noall +answer -x 192.168.1.1
+ 1.1.168.192.in-addr.arpa. 259200 IN     PTR     ns.example.com.
+dig @localhost +noall +answer -x 192.168.1.2
+ 2.1.168.192.in-addr.arpa. 259200 IN     PTR     example.com.
+ 2.1.168.192.in-addr.arpa. 259200 IN     PTR     www.example.com.
+ ```
+
+5. If any changes are made to the zone, follow the same procedure as the forward zone. Update the serial number in the zone file and use the `rndc` utility to reload the zone without restarting the BIND service.
+ ```
+rndc reload
+ ```
+
+<div class="page-break"></div>
+
+# Security
+
+There are several things to take into account when setting up a secure BIND DNS server. There are steps to be taken to protect the whole server by making changes to the operating system, and there are configurations and best practices for the BIND software. Together, these will provide a defense-in-depth strategy to secure the BIND server.
+
+## Server Security
+
+1. Host firewall settings.
+ - CentOS uses the `firewalld` application to manage the underlying `iptables` Linux firewall system. The configuration utility is `firewall-cmd`.
+ - Although this application is easy to use, it limits the available options when configuring rules. It can be worthwhile to learn to configure `iptables` rules directly and disable the `firewalld` service.
+ - When constructing firewall rules, consider what users or subnets need to be able to acces each service on the server. While everyone on the local network may need to access the BIND service to perform DNS lookups, not everyone needs to be allowed to the SSH service, only system administrators.
+2. Local user accounts and passwords.
+ - Each system administrator should have a separate user account. No users should share accounts or passwords.
+ - Each account should have a sufficiently strong password. While it is very difficult to define what a 'strong password' is, length and diverse types of characters (uppercase, lowercase, digits, punctuation) are certainly helpful.
+ - no password reuse
+3. SSH security.
+4. Backups.
+ - Talk about crypto-locker malware
+5. Other.
+
+## BIND Security
+
+1. Restrict zone transfers.
+2. Limit recursive lookups to internal networks only.
+3. Run the `named` application as a non-root user.
+4. Run the `named` application in a chroot environment.
