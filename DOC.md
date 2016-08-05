@@ -638,6 +638,8 @@ There are several things to take into account when setting up a secure BIND DNS 
 
 ## Server Security
 
+Although topics mentioned in this section are essential to server security, implementation is outside the scope of this document. It is easy to find documentation on any one of these topics in numerous places.
+
 1. Host firewall settings.
  - CentOS uses the `firewalld` application to manage the underlying `iptables` Linux firewall system. The configuration utility is `firewall-cmd`.
  - Although this application is easy to use, it limits the available options when configuring rules. It can be worthwhile to learn to configure `iptables` rules directly and disable the `firewalld` service.
@@ -647,13 +649,41 @@ There are several things to take into account when setting up a secure BIND DNS 
  - Each account should have a sufficiently strong password. While it is very difficult to define what a 'strong password' is, length and diverse types of characters (uppercase, lowercase, digits, punctuation) are certainly helpful.
  - no password reuse
 3. SSH security.
+ - The `root` user should not be allowed to login via SSH.
+ - If possible, password authentication should be turned off and only key authentication used.
+ - Two factor authentication can also be used to enhance security.
+ - Limiting what users and IP addresses can connect is also useful to prevent brute force attempts.
+  - Other software, such as Fail2Ban, can be used to detect invalid login attempts and temporarily block the IP address they are coming from.
+  - Strong ciphers should be used to ensure secure communication. See (https://wiki.mozilla.org/Security/Guidelines/OpenSSH#OpenSSH_server) for a current list of good cipher algorithims.
 4. Backups.
- - Talk about crypto-locker malware
-5. Other.
+ - Backups, aside from being generally good practice, can be essential to security.
+ - They can be used to recover a server in the event that it has been breached and can no longer be trusted.
+ - They can also be used to recover in the event of crypto-locker malware or other deliberate destruction of important data.
+ - Good backups are not just keeping a copy of the data, but keeping multiple, frequent, historical copies in multiple geograpically diverse locations.
+ - Protecting the backups can be as important as protecting the server. If an attacker is after the data, they don't care if they get it from the server or a backup copy.
+5. Updates.
+ - It is very important to keep up-to-date on patches to the operating system as well as the application.
+ - Many fear updates may break the working setup, but servers are not set-it-and-forget-it. They take frequent attention.
+ - If properly set up, there are ways to ensure that a bad update cannot completely destroy a system. There are multiple ways to take a 'snapshot' of a point in time of the server before doing the update so that it can be restored in the event of an update failure.
+6. Other.
+ - There are many other security measures and good practices that are not often followed. Do some research, consult with security experts, and above all **do not be lazy!**
+ - Many more servers are breached due to known vulnerabilities, simple misconfigurations, not following best practices, or not keeping on top of security updates, than are exploited with sophisticated malware or 0-days.
+
+<div class="page-break"></div>
 
 ## BIND Security
 
 1. Restrict zone transfers.
+ - The `allow-transfer` option can be used in the global options or individually for each zone in the `named.conf` file.
+ - It allows the administrator to limit the servers that are allowed to transfer a whole zone to only known, trusted servers.
+ - It is unwise to allow zone transfers from any server, as this is a great way for attackers to steal data and perform reconnaissance on a network.
 2. Limit recursive lookups to internal networks only.
+ - Recursive queries are queries from a client to the DNS server that cannot be answered by the server directly, but must be fulfilled by the server sending queries to to other DNS servers in the DNS hierarchy until the requested domain is found.
+ - Generally, it is only desireable for known, internal users of the DNS to be able to perform these types of queries.
+ - If anyone is allowed to perform recursive queries on the DNS server, it can lead to abuse, exploitation, or performance degridation of the DNS server.
 3. Run the `named` application as a non-root user.
+ - After the initial startup of BIND when it claims the network ports (usually TCP and/or UDP 53), there is no reason for it to have elevated privileges.
+ - Running the appliation as a non-privileged user can enhance security in the case that an attacker compromises the application. If they do so, they can only access a limited part of the system. If the application was run as `root`, then the whole system would be compromised, not just the application.
 4. Run the `named` application in a chroot environment.
+ - The chroot provides an isolated area on the system that prevents anything inside from accessing the rest of the system.
+ - Similar to the previously mentioned tactic of running the application as a non-root user, this can prevent the whole system from being compromised in the event that the application is compromised.
