@@ -677,10 +677,16 @@ Although topics mentioned in this section are essential to server security, impl
  - The `allow-transfer` option can be used in the global options or individually for each zone in the `named.conf` file.
  - It allows the administrator to limit the servers that are allowed to transfer a whole zone to only known, trusted servers.
  - It is unwise to allow zone transfers from any server, as this is a great way for attackers to steal data and perform reconnaissance on a network.
+ - The syntax for this option is `allow-transfer { ipaddr; ipaddr; };` or `allow-transfer { "none"; };`.
+ - Inside the curly braces, a semicolon and space separated list of IP address are those that are allowed to zone transfer from this server.
+ - If the keyword "none" is used in quotes instead, then no zone transfers are allowed by any other server.
+ - Unless there is a known reason to allow transfers, such as there are other DNS servers that are slaves to this server, then it is okay to use the "none" keyword and block all zone transfers.
 2. Limit recursive lookups to internal networks only.
  - Recursive queries are queries from a client to the DNS server that cannot be answered by the server directly, but must be fulfilled by the server sending queries to to other DNS servers in the DNS hierarchy until the requested domain is found.
  - Generally, it is only desireable for known, internal users of the DNS to be able to perform these types of queries.
  - If anyone is allowed to perform recursive queries on the DNS server, it can lead to abuse, exploitation, or performance degridation of the DNS server.
+ - The `allow-recursion` option can be used in the global options section to restrict recursive queries.
+ - The format is `allow-recursion { 192.168.1.0/24; 192.168.2.0/24; };` where the semicolon and space separated list inside the curly braces is those subnets or IP addresses allowed to perform recursive queries.
 3. Run the `named` application as a non-root user.
  - After the initial startup of BIND when it claims the network ports (usually TCP and/or UDP 53), there is no reason for it to have elevated privileges.
  - Running the appliation as a non-privileged user can enhance security in the case that an attacker compromises the application. If they do so, they can only access a limited part of the system. If the application was run as `root`, then the whole system would be compromised, not just the application.
