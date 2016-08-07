@@ -164,11 +164,11 @@ cd
 
 # Install BIND
 
-**All remaining steps should be done with the non-root user account. See [Prerequisites section](#prerequisites) for logging into the non-root account.**
+**All remaining steps should be done with the non-root user account. See Prerequisites section for logging into the non-root account.**
 
 ## Download and Verify
 
-1. Go to the Internet Systems Consortium website in the downloads section: [https://www.isc.org/downloads/](https://www.isc.org/downloads/). Click on the 'BIND' option under 'Downloads' to expand the available downloads. Click on the Download button for the 'Current-Stable' release.  
+1. Go to the Internet Systems Consortium (ISC) website in the downloads section: [https://www.isc.org/downloads/](https://www.isc.org/downloads/). Click on the 'BIND' option under 'Downloads' to expand the available downloads. Click on the Download button for the 'Current-Stable' release.  
 ![isc downloads](images/isc-site-001.png)
 
 <div class="page-break"></div>
@@ -176,14 +176,14 @@ cd
 2. In the popup box, right click on the `tar.gz` download box and click 'Copy Link Location' (or 'Copy link address', or something similar, depending on the browser) to copy the file URL to the clipboard.  
 ![isc popup](images/isc-site-002.png)
 
-3. On the command line of the CentOS 7 server, use `wget` to download the file. Paste the file URL previously copied where **file-url** is in the command below.
+3. On the command line of the CentOS 7 server, use `wget` to download the file. Paste the file URL previously copied where **file-url** is in the command below. Note that `-O` is a dash followed by a capital letter 'o', not a zero.
  ```
 wget file-url -O bind.tar.gz
  ```
 
 4. In the same popup box where the `tar.gz` file URL was copied on the ISC website, also copy the URL of the 'SHA512' file listed under the `tar.gz` box.
 
-5. On the command line of the CentOS 7 server, use `wget` to download the 'SHA512' file. Paste the file URL previously copied where **file-url** is in the command below.
+5. On the command line of the CentOS 7 server, use `wget` to download the 'SHA512' file. Paste the file URL previously copied where **file-url** is in the command below. Note that `-O` is a dash followed by a capital letter 'o', not a zero.
  ```
 wget file-url -O bind.sha512.asc
  ```
@@ -283,7 +283,7 @@ make check | tee check.log
  I:       2 UNTESTED
  ```
 
-4. If any tests have the result `FAIL`, clean the current build and start from the beginning of the [Compile](#compile) section. Otherwise, skip this step and continue.
+4. If any tests have the result `FAIL`, clean the current build and start from the beginning of the Compile section. Otherwise, skip this step and continue.
  ```
 make clean
  ```
@@ -368,7 +368,7 @@ sudo mknod /var/named/chroot/dev/null c 1 3
 sudo mknod /var/named/chroot/dev/random c 1 8
  ```
 
-6. Set the appropriate file and directory permissions.
+6. Set the appropriate permissions.
  ```
 sudo chmod 740 /usr/libexec/setup-named-chroot.sh
 sudo chown -R root.named /var/named/chroot/etc /var/named/chroot/var/run/named /var/named/chroot/var/run
@@ -642,7 +642,7 @@ $TTL 3D
 2       PTR     example.com.
 2       PTR     www.example.com.
  ```
- The `TTL`, `SOA`, and `NS` records are the same as in the forward zone. However, the other records are different.  
+ The `TTL`, `SOA`, and `NS` records are the same as in the forward zone. See the Forward Zone Configuration section for more details. However, the other records are different.  
  The type of record for the reverse zone is `PTR`. Instead of the name on the left and the IP on the right as in an `A` record, they are reversed. On the left side, the reversed octets of the host portion of the IP address are listed. On the right side, the fully qualified domain name (FQDN) including the `.` at the end are listed. It is important to have the `.` at the end of the name to absolutely globally identify the name.
 
 3. Edit the `named.conf` file. Press the 'i' key to enter insert mode.
@@ -658,6 +658,7 @@ zone "1.168.192.in-addr.arpa" {
      file "1.168.192.in-addr.arpa";
 };
  ```
+The components of this section are the same as the forward zone. See the Forward Zone Configuration section for more details.
 
 3. Restart the BIND service.
  ```
@@ -694,56 +695,65 @@ There are several issues to consider when setting up a secure BIND DNS server. T
 
 Although the topics mentioned in this section are essential to server security, implementation is outside the scope of this document. It is easy to find documentation on any one of these topics in numerous places.
 
-1. Host firewall settings.
- - CentOS uses the `firewalld` application to manage the underlying `iptables` Linux firewall system. The configuration utility is `firewall-cmd`.
- - Although this application is easy to use, it limits the available options when configuring rules. It can be worthwhile to learn to configure `iptables` rules directly and disable the `firewalld` service.
- - When constructing firewall rules, consider what users or subnets need to be able to access each service on the server. While everyone on the local network may need to access the BIND service to perform DNS lookups, not everyone needs to be allowed to the SSH service, only system administrators.
-2. Local user accounts and passwords.
- - Each system administrator should have a separate user account. No users should share accounts or passwords.
- - Each account should have a sufficiently strong password. While it is very difficult to define what a 'strong password' is, length and diverse types of characters (uppercase, lowercase, digits, and punctuation) are certainly helpful.
- - Do not reuse passwords.
-3. SSH security.
- - The `root` user should not be allowed to login via SSH.
- - If possible, password authentication should be turned off and only key authentication used.
- - Two factor authentication can also be used to enhance security.
- - Limiting which users and IP addresses can connect is also useful to prevent brute force attempts.
+- Host firewall settings.
+  - CentOS uses the `firewalld` application to manage the underlying `iptables` Linux firewall system. The configuration utility is `firewall-cmd`.
+  - Although this application is easy to use, it limits the available options when configuring rules. It can be worthwhile to learn to configure `iptables` rules directly and disable the `firewalld` service.
+  - When constructing firewall rules, consider what users or subnets need to be able to access each service on the server.
+  - While everyone on the local network may need to access the BIND service to perform DNS lookups, not everyone needs to be allowed to the SSH service, only system administrators.
+- Local user accounts and passwords.
+  - Each system administrator should have a separate user account. No users should share accounts or passwords.
+  - Each account should have a sufficiently strong password.
+  - While it is very difficult to define what a 'strong password' is, length and diverse types of characters (uppercase, lowercase, digits, and punctuation) are certainly helpful.
+  - Do not reuse passwords. If a password is used on multiple systems, then if one is compromised all of them are compromised.
+- SSH security.
+  - The `root` user should not be allowed to login via SSH.
+  - If possible, password authentication should be turned off and only key authentication used.
+  - Two factor authentication can also be used to enhance security.
+  - Limiting which users and IP addresses can connect is also useful to prevent brute force attempts.
   - Other software, such as Fail2Ban, can be used to detect invalid login attempts and temporarily block the IP address from which they are coming.
-  - Strong ciphers should be used to ensure secure communication. See (https://wiki.mozilla.org/Security/Guidelines/OpenSSH#OpenSSH_server) for a current list of good cipher algorithms.
-4. Backups.
- - Backups, aside from being generally good practice, can be essential to security.
- - They can be used to recover a server in the event that it has been breached and can no longer be trusted.
- - They can also be used to recover in the event of crypto-locker malware or other deliberate destruction of important data.
- - Good backups do not just keep a copy of the data, but keep multiple, frequent, historical copies in multiple geographically diverse locations.
- - Protecting the backups can be as important as protecting the server. If an attacker is after the data, it does not matter if it comes from the server or a backup copy.
-5. Updates.
- - It is very important to keep up-to-date on patches to the operating system as well as the application.
- - Many fear updates may break the working setup, but servers are not set-it-and-forget-it. They take frequent attention.
- - If properly set up, there are ways to ensure that a bad update cannot completely destroy a system. There are multiple ways to take a 'snapshot' of the server, at a point in time before doing the update, so that it can be restored in the event of an update failure.
-6. Other.
- - There are many other security measures and good practices that are not often followed. Do some research, consult with security experts, and above all **do not be lazy!**
- - Many more servers are breached due to known vulnerabilities, simple misconfigurations, not following best practices, or not keeping on top of security updates, than are exploited with sophisticated malware or 0-days.
+  - Strong ciphers should be used to ensure secure communication. See [https://wiki.mozilla.org/Security/Guidelines/OpenSSH#OpenSSH_server](https://wiki.mozilla.org/Security/Guidelines/OpenSSH#OpenSSH_server) for a current list of good cipher algorithms.
+- Backups.
+  - Backups, aside from being generally good practice, can be essential to security.
+  - They can be used to recover a server in the event that it has been breached and can no longer be trusted.
+  - They can also be used to recover in the event of crypto-locker malware or other deliberate destruction of important data.
+  - Good backups do not just keep a copy of the data, but keep multiple, frequent, historical copies in multiple geographically diverse locations.
+  - Protecting the backups can be as important as protecting the server. If an attacker is after the data, it does not matter if it comes from the server or a backup copy.
+- Updates.
+  - It is very important to keep up-to-date on patches to the operating system as well as the application.
+  - Many fear updates may break the working setup, but servers are not set-it-and-forget-it. They take frequent attention.
+  - If properly set up, there are ways to ensure that a bad update cannot completely destroy a system.
+  - There are multiple ways to take a 'snapshot' of the server, at a point in time before doing the update, so that it can be restored in the event of an update failure.
+- Other.
+  - There are many other security measures and good practices that are not often followed. Do some research, consult with security experts, and above all **do not be lazy!**
+  - Many more servers are breached due to known vulnerabilities, simple misconfigurations, not following best practices, or not keeping on top of security updates, than are exploited with sophisticated malware or 0-days.
 
 <div class="page-break"></div>
 
 ## BIND Security
 
-1. Restrict zone transfers.
- - The `allow-transfer` option can be used in the global options or individually for each zone in the `named.conf` file.
- - It allows the administrator to limit the servers so that only known, trusted servers are allowed to transfer a whole zone.
- - It is unwise to allow zone transfers from any server, as this is a great way for attackers to steal data and perform reconnaissance on a network.
- - The syntax for this option is `allow-transfer { ipaddr; ipaddr; };` or `allow-transfer { "none"; };`.
- - Inside the curly braces are a semicolon and space separated list of IP address that are allowed to zone transfer from this server.
- - If the keyword "none" is used in quotes instead, then no zone transfers are allowed by any other server.
- - Unless there is a known reason to allow transfers, such as slave DNS servers, then it is recommended to use the "none" keyword and block all zone transfers.
-2. Limit recursive lookups to internal networks only.
- - Recursive queries are queries from a client to the DNS server that cannot be answered by the server directly. Instead, these queries must be fulfilled by the server sending queries to other DNS servers in the DNS hierarchy until the requested domain is found.
- - Generally, it is only desirable for known, internal users of the DNS to be able to perform these types of queries.
- - If anyone is allowed to perform recursive queries on the DNS server, it can lead to abuse, exploitation, or performance degradation of the DNS server.
- - The `allow-recursion` option can be used in the global options section to restrict recursive queries.
- - The format is `allow-recursion { 192.168.1.0/24; 192.168.2.0/24; };` where the semicolon and space separated list inside the curly braces is those subnets or IP addresses allowed to perform recursive queries.
-3. Run the `named` application as a non-root user.
- - After the initial startup of BIND when it claims the network ports (usually TCP and/or UDP 53), there is no reason for it to have elevated privileges.
- - Running the application as a non-privileged user can enhance security in the case that an attacker compromises the application. If they do so, they can only access a limited part of the system. If the application was run as `root`, then the whole system would be compromised, not just the application.
-4. Run the `named` application in a chroot environment.
- - The chroot provides an isolated area on the system that prevents anything inside from accessing the rest of the system.
- - Similar to the previously mentioned tactic of running the application as a non-root user, this can prevent the whole system from being compromised in the event that the application is compromised.
+These are a few simple options to improve BIND security. For more information and other options, see the BIND administrator's guide or the ISC website.
+
+- Restrict zone transfers.
+  - The `allow-transfer` option can be used in the global options or individually for each zone in the `named.conf` file.
+  - It allows the administrator to limit the servers so that only known, trusted servers are allowed to transfer a whole zone.
+  - It is unwise to allow zone transfers from any server, as this is a great way for attackers to steal data and perform reconnaissance on a network.
+  - The syntax for this option is `allow-transfer { ipaddr; ipaddr; };` or `allow-transfer { "none"; };`.
+  - Inside the curly braces are a semicolon and space separated list of IP address that are allowed to zone transfer from this server.
+  - If the keyword "none" is used in quotes instead, then no zone transfers are allowed by any other server.
+  - Unless there is a known reason to allow transfers, such as slave DNS servers, then it is recommended to use the "none" keyword and block all zone transfers.
+- Limit recursive lookups to internal networks only.
+  - Recursive queries are queries from a client to the DNS server that cannot be answered by the server directly. Instead, these queries must be fulfilled by the server sending its own queries to other DNS servers until the requested domain is found.
+  - Generally, it is only desirable for known, internal users of the DNS to be able to perform these types of queries.
+  - If anyone is allowed to perform recursive queries on the DNS server, it can lead to abuse, exploitation, or performance degradation of the DNS server.
+  - The `allow-recursion` option can be used in the global options section to restrict recursive queries.
+  - The syntax is `allow-recursion { 192.168.1.0/24; 192.168.2.0/24; };` where the semicolon and space separated list inside the curly braces is those subnets or IP addresses allowed to perform recursive queries.
+- Run the `named` application as a non-root user.
+  - After the initial startup of BIND when it claims the network ports (UDP and TCP 53), there is no reason for it to have elevated privileges.
+  - Running the application as a non-privileged user can enhance security in the case that an attacker compromises the application.
+  - If they do so, they can only access a limited part of the system.
+  - If the application was run as `root`, then the whole system would be compromised, not just the application.
+  - This guide uses a non-root user to run BIND.
+- Run the `named` application in a chroot environment.
+  - The chroot provides an isolated area on the system that prevents anything inside from accessing the rest of the system.
+  - Similar to the previously mentioned tactic of running the application as a non-root user, this can prevent the whole system from being compromised in the event that the application is compromised.
+  - This guide uses a chroot environment for BIND.
