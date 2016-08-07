@@ -5,16 +5,18 @@ This guide assumes the use of BIND v9.10.4-P2 (the most current version at the t
 # Caveats
 
 - If a forward zone is to be configured on the BIND DNS server, not just any zone can be used.
- - If a zone such as `google.com` were configured on the server, it would not be usable by anyone in the world except those users of the particular DNS server.
- - Although it is possible to "over-ride" a zone in this way, it is not recommended.
- - Instead, a real domain name may be purchased from a domain registrar and set to use the BIND DNS server as its authoratative DNS server.
- - Then and only then will the zone be valid world-wide.
- - Note that, for the purposes of experimentation or local use, any zone may be used.
+  - If a zone such as `google.com` were configured on the server, it would not be usable by anyone in the world except those users of the particular DNS server.
+  - Although it is possible to "over-ride" a zone in this way, it is not recommended.
+  - Instead, a real domain name may be purchased from a domain registrar and set to use the BIND DNS server as its authoritative DNS server.
+  - Then and only then will the zone be valid world-wide.
+  - Note that, for the purposes of experimentation or local use, any zone may be used.
 - This guide assumes some basic familiarity with the Linux command line and the RedHat/CentOS/Fedora family of distributions.
 
 # Install CentOS 7
 
 1. Start the machine with a CentOS install DVD inserted. Select the CD drive as the boot device, if necessary.
+
+<div class="page-break"></div>
 
 2. When the CentOS install DVD boots, select "Install CentOS 7" from the menu using the arrow keys and hit the Enter key.  
 ![boot menu selection](images/centos-install-001.png)
@@ -558,7 +560,7 @@ www    CNAME   @
  - `2016010100` - The serial number, usually in the format `YYYYMMDDNN`, where the last two digits `NN` are a revision number for the date. This is used by slave servers to determine when there has been a change to the zone and when they should get an updated copy from the master server.
  - `8H` - The length of time before a slave server should try to refresh the zone from the master.
  - `2H` - The time between retries if the slave fails to contact the master for the zone.
- - `4W` - The time until the zone is no longer authoratative. This value only applies to slave servers.
+ - `4W` - The time until the zone is no longer authoritative. This value only applies to slave servers.
  - `1D` - The amount of time a caching name server should wait before retrying when an `NXDOMAIN` result is returned for the zone.
  - `A 192.168.1.2` - The `A` record for the zone. This means that `example.com` will resolve to `192.168.1.2`. Note that, with this record and the one following, there is no hostname before the record type. This is a shortcut that can be used in the zone files. The last listed hostname, which in this case is the zone name `example.com`, is used as the hostname for these records.
  - `NS ns` - The `NS` record for the zone that identifies the primary name server. It points to the name `ns`, which in turn has an `A` record that points to the IP address `192.168.1.1`.
@@ -579,7 +581,7 @@ zone "example.com" {
  ```
  The basic components of the entry are as follows.
  - `zone "example.com"` - The zone definition. This gives the name to the zone.
- - `type master` - The zone is a master zone, meaning this server is authoratative for the zone.
+ - `type master` - The zone is a master zone, meaning this server is authoritative for the zone.
  - `notify no;` - Do not send notifies to any other DNS servers. Sending notifies is unnecessary unless there are slave servers for the zone.
  - `file "example.com` - Defines the file that contains the zone records. This is a relative path based on the `directory` option earlier in the file.
 
@@ -641,7 +643,7 @@ $TTL 3D
 2       PTR     www.example.com.
  ```
  The `TTL`, `SOA`, and `NS` records are the same as in the forward zone. However, the other records are different.  
- The type of record for the reverse zone is `PTR`. Instead of the name on the left and the IP on the right as in an `A` record, they are reversed. On the left side, the reversed octects of the host portion of the IP address are listed. On the right side, the fully qualified domain name (FQDN) including the `.` at the end are listed. It is important to have the `.` at the end of the name to absolutely globally identify the name.
+ The type of record for the reverse zone is `PTR`. Instead of the name on the left and the IP on the right as in an `A` record, they are reversed. On the left side, the reversed octets of the host portion of the IP address are listed. On the right side, the fully qualified domain name (FQDN) including the `.` at the end are listed. It is important to have the `.` at the end of the name to absolutely globally identify the name.
 
 3. Edit the `named.conf` file. Press the 'i' key to enter insert mode.
  ```
@@ -706,12 +708,12 @@ Although the topics mentioned in this section are essential to server security, 
  - Two factor authentication can also be used to enhance security.
  - Limiting which users and IP addresses can connect is also useful to prevent brute force attempts.
   - Other software, such as Fail2Ban, can be used to detect invalid login attempts and temporarily block the IP address from which they are coming.
-  - Strong ciphers should be used to ensure secure communication. See (https://wiki.mozilla.org/Security/Guidelines/OpenSSH#OpenSSH_server) for a current list of good cipher algorithims.
+  - Strong ciphers should be used to ensure secure communication. See (https://wiki.mozilla.org/Security/Guidelines/OpenSSH#OpenSSH_server) for a current list of good cipher algorithms.
 4. Backups.
  - Backups, aside from being generally good practice, can be essential to security.
  - They can be used to recover a server in the event that it has been breached and can no longer be trusted.
  - They can also be used to recover in the event of crypto-locker malware or other deliberate destruction of important data.
- - Good backups do not just keep a copy of the data, but keep multiple, frequent, historical copies in multiple geograpically diverse locations.
+ - Good backups do not just keep a copy of the data, but keep multiple, frequent, historical copies in multiple geographically diverse locations.
  - Protecting the backups can be as important as protecting the server. If an attacker is after the data, it does not matter if it comes from the server or a backup copy.
 5. Updates.
  - It is very important to keep up-to-date on patches to the operating system as well as the application.
@@ -735,13 +737,13 @@ Although the topics mentioned in this section are essential to server security, 
  - Unless there is a known reason to allow transfers, such as slave DNS servers, then it is recommended to use the "none" keyword and block all zone transfers.
 2. Limit recursive lookups to internal networks only.
  - Recursive queries are queries from a client to the DNS server that cannot be answered by the server directly. Instead, these queries must be fulfilled by the server sending queries to other DNS servers in the DNS hierarchy until the requested domain is found.
- - Generally, it is only desireable for known, internal users of the DNS to be able to perform these types of queries.
- - If anyone is allowed to perform recursive queries on the DNS server, it can lead to abuse, exploitation, or performance degridation of the DNS server.
+ - Generally, it is only desirable for known, internal users of the DNS to be able to perform these types of queries.
+ - If anyone is allowed to perform recursive queries on the DNS server, it can lead to abuse, exploitation, or performance degradation of the DNS server.
  - The `allow-recursion` option can be used in the global options section to restrict recursive queries.
  - The format is `allow-recursion { 192.168.1.0/24; 192.168.2.0/24; };` where the semicolon and space separated list inside the curly braces is those subnets or IP addresses allowed to perform recursive queries.
 3. Run the `named` application as a non-root user.
  - After the initial startup of BIND when it claims the network ports (usually TCP and/or UDP 53), there is no reason for it to have elevated privileges.
- - Running the appliation as a non-privileged user can enhance security in the case that an attacker compromises the application. If they do so, they can only access a limited part of the system. If the application was run as `root`, then the whole system would be compromised, not just the application.
+ - Running the application as a non-privileged user can enhance security in the case that an attacker compromises the application. If they do so, they can only access a limited part of the system. If the application was run as `root`, then the whole system would be compromised, not just the application.
 4. Run the `named` application in a chroot environment.
  - The chroot provides an isolated area on the system that prevents anything inside from accessing the rest of the system.
  - Similar to the previously mentioned tactic of running the application as a non-root user, this can prevent the whole system from being compromised in the event that the application is compromised.
