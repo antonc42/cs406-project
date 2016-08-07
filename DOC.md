@@ -1,19 +1,20 @@
 # Installing BIND 9 DNS Server on CentOS 7
 
-This guide assumes the use of BIND v9.10.4-P2 (the most current version at the time of writing) and CentOS 7 minimal install. Any other versions of software or distributions may have different dependencies, options, or commands.
+This guide assumes the use of BIND v9.10.4-P2 (the most current version at the time of writing) and CentOS 7 minimal install. Any other versions of the software or distributions may have different dependencies, options, or commands.
 
 # Caveats
 
-- If a forward zone is to be configured on the BIND DNS server, not just any zone can be used, except for the purposes of experimentation or local use.
+- If a forward zone is to be configured on the BIND DNS server, not just any zone can be used.
  - If a zone such as `google.com` were configured on the server, it would not be usable by anyone in the world except those users of the particular DNS server.
  - Although it is possible to "over-ride" a zone in this way, it is not recommended.
  - Instead, a real domain name may be purchased from a domain registrar and set to use the BIND DNS server as its authoratative DNS server.
  - Then and only then will the zone be valid world-wide.
+ - Note that, for the purposes of experimentation or local use, any zone may be used.
 - This guide assumes some basic familiarity with the Linux command line and the RedHat/CentOS/Fedora family of distributions.
 
 # Install CentOS 7
 
-1. Start the machine with a CentOS install DVD inserted. Select the CD drive as the boot device if necessary.
+1. Start the machine with a CentOS install DVD inserted. Select the CD drive as the boot device, if necessary.
 
 2. When the CentOS install DVD boots, select "Install CentOS 7" from the menu using the arrow keys and hit the Enter key.  
 ![boot menu selection](images/centos-install-001.png)
@@ -35,7 +36,7 @@ This guide assumes the use of BIND v9.10.4-P2 (the most current version at the t
 
  <div class="page-break"></div>
 
-6. To configure the static IP, select the "IPv4 Settings" tab, select "Manual" from the drop-down menu, and click the Add button. Enter the desired IP address, netmask (or CIDR mask), and gateway. List the DNS servers to use in the "DNS Servers" box, each one separated by commas. Click the Save button.  
+6. To configure the static IP, select the "IPv4 Settings" tab, select "Manual" from the drop-down menu, and click the Add button. Enter the desired IP address, netmask (or CIDR mask), and gateway. List the DNS servers to use in the "DNS Servers" box and separate each one with commas. Click the Save button.  
 ![static ip](images/centos-install-005.png)
 
  <div class="page-break"></div>
@@ -50,7 +51,7 @@ This guide assumes the use of BIND v9.10.4-P2 (the most current version at the t
 
  <div class="page-break"></div>
 
-9. Select the appropriate time zone. For US Central time, select "Americas/Chicago". Make sure the the "Network Time" in the upper right is set to "On". Click the Done button.
+9. Select the appropriate time zone. For US Central time, select "Americas/Chicago". Make sure that the "Network Time" in the upper right is set to "On". Click the Done button.
 ![date time](images/centos-install-008.png)
 
  <div class="page-break"></div>
@@ -89,11 +90,11 @@ This guide assumes the use of BIND v9.10.4-P2 (the most current version at the t
 
 # Prerequisites
 
-**Note that some of these dependencies are for the BIND application and others are useful utilities to aid in setup and not strictly dependencies.**
+**Note that some of these prerequisites are for the BIND application and others are useful utilities to aid in setup.**
 
 1. Once the system has restarted to the login prompt, login with the username `root` and the password that was set during the install.
 
-2. Install dependencies. Answer 'y' or 'yes' if prompted to confirm the install or import a GPG key.
+2. Install prerequisites. Answer 'y' or 'yes' if prompted to confirm the install or import a GPG key.
  ```
 yum install screen vim bind-utils wget openssl-devel gcc automake net-tools checkpolicy policycoreutils-python perl-Net-DNS-Nameserver perl-IO-Socket-INET6
  ```
@@ -110,7 +111,7 @@ reboot
 
 5. When the system has finished restarting, log back in as the `root` user.
 
-6. Create the `named` user that BIND will run as. This is important to ensure that BIND does not run with `root` privileges.
+6. Create the `named` user. This is the user that BIND runs as instead of the `root` user.
  ```
 useradd -r -M -d /var/named/chroot -s /sbin/nologin named
  ```
@@ -125,7 +126,7 @@ firewall-cmd --reload
 vim -c 'set paste' /tmp/named-custom.te
  ```
 
-9. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+9. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x` and then hitting Enter.
  ```
 module named-custom 1.0;
 require {
@@ -265,14 +266,14 @@ make
 sudo bin/tests/system/ifconfig.sh up
  ```
 
-2. Check the built software, saving the output to a log file.
+2. Check the built software and save the output to a log file.
  ```
 make check | tee check.log
  ```
  **Note:** This checking process will take a very long time, usually more than 15 minutes.  
- **Note:** It is helpful to save the output to a log file because it is extremely long and it may be necessary to search through it to find any problems with the checks.
+ **Note:** It is helpful to save the output to a log file, because it is extremely long and it may be necessary to search through it to find any problems with the checks.
 
-3. **None of the tests should have the result `FAIL`.** Any results that have `SKIPPED` or `UNTESTED` are fine.
+3. **None of the tests should have the result `FAIL`.** If the result is `SKIPPED` or `UNTESTED`, it is fine.
  ```
  I:System test result summary:
  I:      69 PASS
@@ -309,7 +310,7 @@ sudo mkdir -p /var/named/chroot/dev /var/named/chroot/etc /var/named/chroot/proc
 sudo vim -c "set paste" /usr/libexec/setup-named-chroot.sh
  ```
 
-4. Copy the following code and paste it into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+4. Copy the following code and paste it into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x` and then hitting Enter.
  ```
  #!/bin/bash
  usage() {
@@ -379,7 +380,7 @@ sudo setsebool -P named_write_master_zones on
 sudo vim -c "set paste" /usr/lib/systemd/system/named-chroot-setup.service
  ```
 
-8. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+8. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x` and then hitting Enter.
  ```
 [Unit]
 Description=Set-up/destroy chroot environment for named (DNS)
@@ -396,7 +397,7 @@ ExecStop=/usr/libexec/setup-named-chroot.sh /var/named/chroot off
 sudo vim -c "set paste" /usr/lib/systemd/system/named.service
  ```
 
-10. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+10. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x` and then hitting Enter.
  ```
 [Unit]
 Description=Berkeley Internet Name Domain (DNS)
@@ -436,7 +437,7 @@ This is the minimum configuration needed for the BIND server to start and run as
 sudo vim -c 'set paste' /var/named/chroot/etc/named.conf
  ```
 
-2. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+2. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x` and then hitting Enter.
  ```
 options {
        directory "/var/named";
@@ -482,7 +483,7 @@ sudo ln -s /var/named/chroot/etc/rndc.conf /etc/rndc.conf
 sudo vim -c 'set paste' /var/named/chroot/var/named/0.0.127.in-addr.arpa
  ```
 
-7. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+7. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x` and then hitting Enter.
  ```
 $TTL 3D
 @       IN SOA  ns.local.domain. hostmaster.local.domain. (
@@ -530,14 +531,14 @@ facebook.com.           297     IN      A       66.220.156.68
 
 ## Forward Zone Configuration
 
-If desired, a forward zone can be configured on the DNS server. We will be using the `example.com` zone. A forward zone is one that translates names such as `example.com` into IP addresses such as `192.168.1.2`.
+If desired, a forward zone can be configured on the DNS server. Here the `example.com` zone is used. A forward zone is one that translates names such as `example.com` into IP addresses such as `192.168.1.2`.
 
 1. Create the zone file.  Press the 'i' key to enter insert mode.
  ```
 sudo vim -c 'set paste' /var/named/chroot/var/named/example.com
  ```
 
-2. Copy and paste the following into the file.  Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+2. Copy and paste the following into the file.  Return to normal mode by pressing Esc. Save and close the file by typing `:x` and then hitting Enter.
  ```
 $TTL 3D
 @      IN SOA  ns.example.com. hostmaster.example.com. (
@@ -551,15 +552,15 @@ $TTL 3D
 ns     A       192.168.1.1
 www    CNAME   @
  ```
- The basic components of the file are as follows. The values may be changed to fit the zone
+ The basic components of the file are as follows. The values may be changed to fit the zone.
  - `$TTL 3D` - The default time to live for the records in this zone. This is the amount of time that a caching name server will keep the record before letting it expire.
- - `@ IN SOA ns.example.com. hostmaster.example.com.` - The start of authority record for this zone. The `@` is automatically substituted with the zone name `example.com`. `ns.example.com` is the primary name server for this zone. It must have an `A` record, as seen later in the file. `hostmaster.example.com` is the administrator of the zone. Note the dot at the ends of both names. They are very important.
- - `2016010100` - The serial number, usually in the format `YYYYMMDDNN`, where the last two digits `NN` are a revision number for the date. This is used by slave servers to determine when there has been a change to the zone and they need to get an updated copy from the master server.
- - `8H` - The length of time before a slave server should be try to refresh the zone from the master.
+ - `@ IN SOA ns.example.com. hostmaster.example.com.` - The start of authority record for this zone. The `@` is automatically substituted with the zone name `example.com`. `ns.example.com` is the primary name server for this zone. It must have an `A` record, as seen later in the file. `hostmaster.example.com` is the administrator of the zone. Note the dots at the ends of both names. They are very important.
+ - `2016010100` - The serial number, usually in the format `YYYYMMDDNN`, where the last two digits `NN` are a revision number for the date. This is used by slave servers to determine when there has been a change to the zone and when they should get an updated copy from the master server.
+ - `8H` - The length of time before a slave server should try to refresh the zone from the master.
  - `2H` - The time between retries if the slave fails to contact the master for the zone.
  - `4W` - The time until the zone is no longer authoratative. This value only applies to slave servers.
  - `1D` - The amount of time a caching name server should wait before retrying when an `NXDOMAIN` result is returned for the zone.
- - `A 192.168.1.2` - The `A` record for the zone. This means that `example.com` will resolve to `192.168.1.2`. Note that with this record and the one following, there is no hostname before the record type. This is a shortcut that can be used in the zone files. The last listed hostname, which in this case is the zone name `example.com`, is used as the hostname for these records.
+ - `A 192.168.1.2` - The `A` record for the zone. This means that `example.com` will resolve to `192.168.1.2`. Note that, with this record and the one following, there is no hostname before the record type. This is a shortcut that can be used in the zone files. The last listed hostname, which in this case is the zone name `example.com`, is used as the hostname for these records.
  - `NS ns` - The `NS` record for the zone that identifies the primary name server. It points to the name `ns`, which in turn has an `A` record that points to the IP address `192.168.1.1`.
  - `www CNAME @` - A `CNAME` or alias record for the zone. This is effectively the same as `www CNAME example.com.` because the `@` is substituted with the zone name. The alias record means that `www.example.com` will alias to `example.com` which will resolve to `192.168.1.2`.
 
@@ -568,7 +569,7 @@ www    CNAME   @
 sudo vim -c 'set paste' /var/named/chroot/etc/named.conf
  ```
 
-4. Copy and paste the following at the end of the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+4. Copy and paste the following at the end of the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x` and then hitting Enter.
  ```
 zone "example.com" {
         type master;
@@ -609,7 +610,7 @@ example.com.            259200  IN      NS      ns.example.com.
 ns.example.com.         259200  IN      A       192.168.1.1
   ```
 
-7. If any changes are made to the zone file, the serial number must be incremented by at least one. However, it is recommended to keep with the `YYYYMMDDNN` format that follows the date. After the changes to the file are saved, the `rndc` command can be used to reload the zones without restarting the BIND service.
+7. If any changes are made to the zone file, the serial number must be incremented by at least one. However, it is recommended to continue using the `YYYYMMDDNN` format that follows the date. After the changes to the file are saved, the `rndc` command can be used to reload the zones without restarting the BIND service.
  ```
 rndc reload
  ```
@@ -625,7 +626,7 @@ If desired, a reverse zone can be configured. The reverse zone resolves IP addre
 sudo vim -c 'set paste' /var/named/chroot/var/named/1.168.192.in-addr.arpa
  ```
 
-2. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+2. Copy and paste the following into the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x` and then hitting Enter.
  ```
 $TTL 3D
 @      IN SOA  ns.example.com. hostmaster.example.com. (
@@ -647,7 +648,7 @@ $TTL 3D
 sudo vim -c 'set paste' /var/named/chroot/etc/named.conf
  ```
 
-4. Copy and paste the following at the end of the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x`.
+4. Copy and paste the following at the end of the file. Return to normal mode by pressing Esc. Save and close the file by typing `:x` and then hitting Enter.
  ```
 zone "1.168.192.in-addr.arpa" {
      type master;
@@ -685,37 +686,37 @@ rndc reload
 
 # Security
 
-There are several things to take into account when setting up a secure BIND DNS server. There are steps to be taken to protect the whole server by making changes to the operating system, and there are configurations and best practices for the BIND software. Together, these will provide a defense-in-depth strategy to secure the BIND server.
+There are several issues to consider when setting up a secure BIND DNS server. There are steps to be taken to protect the whole server by making changes to the operating system, and there are configurations and best practices for the BIND software. Together, these will provide a defense-in-depth strategy to secure the BIND server.
 
 ## Server Security
 
-Although topics mentioned in this section are essential to server security, implementation is outside the scope of this document. It is easy to find documentation on any one of these topics in numerous places.
+Although the topics mentioned in this section are essential to server security, implementation is outside the scope of this document. It is easy to find documentation on any one of these topics in numerous places.
 
 1. Host firewall settings.
  - CentOS uses the `firewalld` application to manage the underlying `iptables` Linux firewall system. The configuration utility is `firewall-cmd`.
  - Although this application is easy to use, it limits the available options when configuring rules. It can be worthwhile to learn to configure `iptables` rules directly and disable the `firewalld` service.
- - When constructing firewall rules, consider what users or subnets need to be able to acces each service on the server. While everyone on the local network may need to access the BIND service to perform DNS lookups, not everyone needs to be allowed to the SSH service, only system administrators.
+ - When constructing firewall rules, consider what users or subnets need to be able to access each service on the server. While everyone on the local network may need to access the BIND service to perform DNS lookups, not everyone needs to be allowed to the SSH service, only system administrators.
 2. Local user accounts and passwords.
  - Each system administrator should have a separate user account. No users should share accounts or passwords.
- - Each account should have a sufficiently strong password. While it is very difficult to define what a 'strong password' is, length and diverse types of characters (uppercase, lowercase, digits, punctuation) are certainly helpful.
- - no password reuse
+ - Each account should have a sufficiently strong password. While it is very difficult to define what a 'strong password' is, length and diverse types of characters (uppercase, lowercase, digits, and punctuation) are certainly helpful.
+ - Do not reuse passwords.
 3. SSH security.
  - The `root` user should not be allowed to login via SSH.
  - If possible, password authentication should be turned off and only key authentication used.
  - Two factor authentication can also be used to enhance security.
- - Limiting what users and IP addresses can connect is also useful to prevent brute force attempts.
-  - Other software, such as Fail2Ban, can be used to detect invalid login attempts and temporarily block the IP address they are coming from.
+ - Limiting which users and IP addresses can connect is also useful to prevent brute force attempts.
+  - Other software, such as Fail2Ban, can be used to detect invalid login attempts and temporarily block the IP address from which they are coming.
   - Strong ciphers should be used to ensure secure communication. See (https://wiki.mozilla.org/Security/Guidelines/OpenSSH#OpenSSH_server) for a current list of good cipher algorithims.
 4. Backups.
  - Backups, aside from being generally good practice, can be essential to security.
  - They can be used to recover a server in the event that it has been breached and can no longer be trusted.
  - They can also be used to recover in the event of crypto-locker malware or other deliberate destruction of important data.
- - Good backups are not just keeping a copy of the data, but keeping multiple, frequent, historical copies in multiple geograpically diverse locations.
- - Protecting the backups can be as important as protecting the server. If an attacker is after the data, they don't care if they get it from the server or a backup copy.
+ - Good backups do not just keep a copy of the data, but keep multiple, frequent, historical copies in multiple geograpically diverse locations.
+ - Protecting the backups can be as important as protecting the server. If an attacker is after the data, it does not matter if it comes from the server or a backup copy.
 5. Updates.
  - It is very important to keep up-to-date on patches to the operating system as well as the application.
  - Many fear updates may break the working setup, but servers are not set-it-and-forget-it. They take frequent attention.
- - If properly set up, there are ways to ensure that a bad update cannot completely destroy a system. There are multiple ways to take a 'snapshot' of a point in time of the server before doing the update so that it can be restored in the event of an update failure.
+ - If properly set up, there are ways to ensure that a bad update cannot completely destroy a system. There are multiple ways to take a 'snapshot' of the server, at a point in time before doing the update, so that it can be restored in the event of an update failure.
 6. Other.
  - There are many other security measures and good practices that are not often followed. Do some research, consult with security experts, and above all **do not be lazy!**
  - Many more servers are breached due to known vulnerabilities, simple misconfigurations, not following best practices, or not keeping on top of security updates, than are exploited with sophisticated malware or 0-days.
@@ -726,14 +727,14 @@ Although topics mentioned in this section are essential to server security, impl
 
 1. Restrict zone transfers.
  - The `allow-transfer` option can be used in the global options or individually for each zone in the `named.conf` file.
- - It allows the administrator to limit the servers that are allowed to transfer a whole zone to only known, trusted servers.
+ - It allows the administrator to limit the servers so that only known, trusted servers are allowed to transfer a whole zone.
  - It is unwise to allow zone transfers from any server, as this is a great way for attackers to steal data and perform reconnaissance on a network.
  - The syntax for this option is `allow-transfer { ipaddr; ipaddr; };` or `allow-transfer { "none"; };`.
- - Inside the curly braces, a semicolon and space separated list of IP address are those that are allowed to zone transfer from this server.
+ - Inside the curly braces are a semicolon and space separated list of IP address that are allowed to zone transfer from this server.
  - If the keyword "none" is used in quotes instead, then no zone transfers are allowed by any other server.
- - Unless there is a known reason to allow transfers, such as there are other DNS servers that are slaves to this server, then it is okay to use the "none" keyword and block all zone transfers.
+ - Unless there is a known reason to allow transfers, such as slave DNS servers, then it is recommended to use the "none" keyword and block all zone transfers.
 2. Limit recursive lookups to internal networks only.
- - Recursive queries are queries from a client to the DNS server that cannot be answered by the server directly, but must be fulfilled by the server sending queries to to other DNS servers in the DNS hierarchy until the requested domain is found.
+ - Recursive queries are queries from a client to the DNS server that cannot be answered by the server directly. Instead, these queries must be fulfilled by the server sending queries to other DNS servers in the DNS hierarchy until the requested domain is found.
  - Generally, it is only desireable for known, internal users of the DNS to be able to perform these types of queries.
  - If anyone is allowed to perform recursive queries on the DNS server, it can lead to abuse, exploitation, or performance degridation of the DNS server.
  - The `allow-recursion` option can be used in the global options section to restrict recursive queries.
